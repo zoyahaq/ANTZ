@@ -11,18 +11,17 @@ export class FinalProject extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
-
         
         this.shapes = {
-            
+            cube1: new defs.Cube()
         };
 
         // *** Materials
         this.materials = {
-            test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
+            test: new Material(new Gouraud_Shader(),
+                {ambient: .4, diffusivity: .6, color: hex_color("#CDEAC0")}),
             test2: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),  
+                {ambient: .4, diffusivity: .6, color: hex_color("#b5651e")}),
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
@@ -44,12 +43,21 @@ export class FinalProject extends Scene {
             program_state.set_camera(this.initial_camera_location);
         }
 
+        const light_position = vec4(0, 5, 5, 1);
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)]
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         const yellow = hex_color("#fac91a");
         let model_transform = Mat4.identity();
+        
+        const grass_trans = model_transform.times(Mat4.scale(15, 0.1, 15))
+        const dirt_trans = model_transform.times(Mat4.scale(15, 15, 15)).times(Mat4.translation(0, -1, 0))
+
+        this.shapes.cube1.draw(context, program_state, grass_trans, this.materials.test)
+        this.shapes.cube1.draw(context, program_state, dirt_trans, this.materials.test2)
+
         if (this.attached != undefined){
             //program_state.set_camera(Mat4.inverse(this.attached().map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blendingFactor))));
             program_state.camera_inverse = this.attached().map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blendingFactor));
