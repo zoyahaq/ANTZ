@@ -54,9 +54,9 @@ export class FinalProject extends Scene {
 
         // *** Materials
         this.materials = {
-            test: new Material(new Gouraud_Shader(),
+            grass_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#CDEAC0") }),
-            test2: new Material(new Gouraud_Shader(),
+            dirt_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#b5651e") }),
             rock1: new Material(new defs.Phong_Shader(), rockInfo),
             rock2: new Material(new defs.Phong_Shader(), rockInfo),
@@ -101,6 +101,12 @@ export class FinalProject extends Scene {
         }
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+
+        this.x = 5;
+        this.y = 5;
+        this.z = 5;
+
+        this.block_positions = Array(this.x * this.y * this.z).fill(1);
     }
 
     make_control_panel() {
@@ -110,6 +116,32 @@ export class FinalProject extends Scene {
         this.key_triggered_button("View Main Colony", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
     }
+
+    get_block_position(x, y, z){
+        return this.block_positions[this.y * this.z * x + this.z * y + z];
+    }
+
+    set_block_position(x, y, z, val){
+        const ret = this.block_positions[this.y * this.z * x + this.z * y + z];
+        this.block_positions[this.y * this.z * x + this.z * y + z] = val;
+        return ret;
+    }
+
+    display_arrayed_objects(context, program_state, shape_obj, base_trans){
+        for (let i = 0; i < this.x; i++) {
+            for (let j = 0; j < this.y; j++) {
+                for (let k = 0; k < this.z; k++) {
+                    if (this.get_block_position(i, j, k) == 1) {
+                        this.shapes.cube1.draw(context,
+                            program_state,
+                            base_trans.times(Mat4.translation(i, j, k)),
+                            shape_obj);
+                    }
+                }
+            }
+        }
+    }
+
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
@@ -129,6 +161,14 @@ export class FinalProject extends Scene {
         let model_transform = Mat4.identity();
 
 
+        // const grass_trans = model_transform.times(Mat4.scale(15, 0.1, 15))
+        const dirt_trans = model_transform.times(Mat4.translation(0, -1, 0))
+        this.display_arrayed_objects(context, program_state, this.materials.dirt_block, dirt_trans);
+
+        // this.shapes.cube1.draw(context, program_state, grass_trans, this.materials.grass_block)
+        // this.shapes.cube1.draw(context, program_state, dirt_trans, this.materials.dirt_block)
+        // this.shapes.cube1.draw(context, program_state, dirt_trans.times(Mat4.translation(0, -1, 0)), this.materials.dirt_block)
+
         var rockTransform = Mat4.identity();
         var treeTransform = Mat4.identity();
 
@@ -136,9 +176,9 @@ export class FinalProject extends Scene {
         this.rock1 = Mat4.inverse(rockTransform.times(inverseTranslate));
         this.rock2 = Mat4.inverse(rockTransform.times(inverseTranslate));
         this.rock3 = Mat4.inverse(rockTransform.times(inverseTranslate));
-        this.shapes.rock1.draw(context, program_state, rockTransform.times(Mat4.translation(rock1[0], rock1[1], rock1[2])), this.materials.rock1);
-        this.shapes.rock2.draw(context, program_state, rockTransform.times(Mat4.translation(rock2[0], rock2[1], rock2[2])), this.materials.rock1);
-        this.shapes.rock3.draw(context, program_state, rockTransform.times(Mat4.translation(rock3[0], rock3[1], rock3[2])), this.materials.rock1);
+        // this.shapes.rock1.draw(context, program_state, rockTransform.times(Mat4.translation(rock1[0], rock1[1], rock1[2])), this.materials.rock1);
+        // this.shapes.rock2.draw(context, program_state, rockTransform.times(Mat4.translation(rock2[0], rock2[1], rock2[2])), this.materials.rock1);
+        // this.shapes.rock3.draw(context, program_state, rockTransform.times(Mat4.translation(rock3[0], rock3[1], rock3[2])), this.materials.rock1);
 
         // tree 1
         this.t1l1 = Mat4.inverse(treeTransform.times(inverseTranslate));
@@ -146,13 +186,12 @@ export class FinalProject extends Scene {
         this.t1l3 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.t1l4 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.branch1 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.shapes.t1l1.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0], tree1[1] + 0.5, tree1[2])), this.materials.t1l1);
-        this.shapes.t1l2.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0] - 0.7, tree1[1], tree1[2])), this.materials.t1l2);
-        this.shapes.t1l3.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0] + 0.7, tree1[1], tree1[2])), this.materials.t1l3);
-        this.shapes.t1l4.draw(context, program_state, treeTransform.times(Mat4.translation(tree1[0], tree1[1], tree1[2])), this.materials.t1l4);
-        this.shapes.branch1.draw(context, program_state, Mat4.identity().times(Mat4.scale(1 / 1.1, 1 / 1.1, 1 / 1.1)).times(Mat4.scale(1, 8, 1)).times(Mat4.rotation(Math.PI, 0, 1, 1)).
-            times(Mat4.translation(-tree1[0], tree1[1] - 5, tree1[2] + 0.1)), this.materials.branch1);
-
+        // this.shapes.t1l1.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0], tree1[1] + 0.5, tree1[2])), this.materials.t1l1);
+        // this.shapes.t1l2.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0] - 0.7, tree1[1], tree1[2])), this.materials.t1l2);
+        // this.shapes.t1l3.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0] + 0.7, tree1[1], tree1[2])), this.materials.t1l3);
+        // this.shapes.t1l4.draw(context, program_state, treeTransform.times(Mat4.translation(tree1[0], tree1[1], tree1[2])), this.materials.t1l4);
+        // this.shapes.branch1.draw(context, program_state, Mat4.identity().times(Mat4.scale(1 / 1.1, 1 / 1.1, 1 / 1.1)).times(Mat4.scale(1, 8, 1)).times(Mat4.rotation(Math.PI, 0, 1, 1)).
+        //     times(Mat4.translation(-tree1[0], tree1[1] - 5, tree1[2] + 0.1)), this.materials.branch1);
 
         // tree 2
         this.t2l1 = Mat4.inverse(treeTransform.times(inverseTranslate));
@@ -160,19 +199,12 @@ export class FinalProject extends Scene {
         this.t2l3 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.t2l4 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.branch2 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.shapes.t2l1.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0], tree2[1] + 0.5, tree2[2] - 1.75)), this.materials.t2l1);
-        this.shapes.t2l2.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0] - 0.7, tree2[1], tree2[2] - 1.75)), this.materials.t2l2);
-        this.shapes.t2l3.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0] + 0.7, tree2[1], tree2[2] - 1.75)), this.materials.t2l3);
-        this.shapes.t2l4.draw(context, program_state, treeTransform.times(Mat4.translation(tree2[0], tree2[1], tree2[2] - 1.75)), this.materials.t2l4);
-        this.shapes.branch2.draw(context, program_state, Mat4.identity().times(Mat4.scale(1 / 1.1, 1 / 1.1, 1 / 1.1)).times(Mat4.scale(1, 8, 1)).times(Mat4.rotation(Math.PI, 0, 1, 1)).
-            times(Mat4.translation(tree2[0] - 8.5, tree2[1] - 7, tree2[2] + 0.1)), this.materials.branch2);
-
-
-        const grass_trans = model_transform.times(Mat4.scale(15, 0.1, 15))
-        const dirt_trans = model_transform.times(Mat4.scale(15, 15, 15)).times(Mat4.translation(0, -1, 0))
-
-        this.shapes.cube1.draw(context, program_state, grass_trans, this.materials.test)
-        this.shapes.cube1.draw(context, program_state, dirt_trans, this.materials.test2)
+        // this.shapes.t2l1.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0], tree2[1] + 0.5, tree2[2] - 1.75)), this.materials.t2l1);
+        // this.shapes.t2l2.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0] - 0.7, tree2[1], tree2[2] - 1.75)), this.materials.t2l2);
+        // this.shapes.t2l3.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0] + 0.7, tree2[1], tree2[2] - 1.75)), this.materials.t2l3);
+        // this.shapes.t2l4.draw(context, program_state, treeTransform.times(Mat4.translation(tree2[0], tree2[1], tree2[2] - 1.75)), this.materials.t2l4);
+        // this.shapes.branch2.draw(context, program_state, Mat4.identity().times(Mat4.scale(1 / 1.1, 1 / 1.1, 1 / 1.1)).times(Mat4.scale(1, 8, 1)).times(Mat4.rotation(Math.PI, 0, 1, 1)).
+        //     times(Mat4.translation(tree2[0] - 8.5, tree2[1] - 7, tree2[2] + 0.1)), this.materials.branch2);
 
         var antBody_frontTrans = model_transform;
         var antBody_middleTrans = model_transform;
@@ -191,19 +223,19 @@ export class FinalProject extends Scene {
         // All planet transformations     
         antBody_frontTrans = antBody_frontTrans.times((Mat4.translation(-.4, 0.5, 0))).times(Mat4.scale(.3, .3, .3));
         antBody_middleTrans = antBody_middleTrans.times((Mat4.translation(0, 0.5, 0))).times(Mat4.scale(.25, .25, .25));
-        antBody_endTrans  = antBody_endTrans.times((Mat4.translation(.5, 0.5, 0))).times(Mat4.scale(.4, .4, .4));
-        buttDesignTrans  = antBody_endTrans.times((Mat4.translation(.5, 0.5, 0))).times(Mat4.scale(.4, .4, .4));
-        eyeballTrans = eyeballTrans.times((Mat4.translation(-.45, 0.75, .2))).times(Mat4.scale(.08, .08, .08 ));
+        antBody_endTrans = antBody_endTrans.times((Mat4.translation(.5, 0.5, 0))).times(Mat4.scale(.4, .4, .4));
+        buttDesignTrans = antBody_endTrans.times((Mat4.translation(.5, 0.5, 0))).times(Mat4.scale(.4, .4, .4));
+        eyeballTrans = eyeballTrans.times((Mat4.translation(-.45, 0.75, .2))).times(Mat4.scale(.08, .08, .08));
 
         // Ant legs 
-        back_legOneTrans = back_legOneTrans.times((Mat4.translation(0, 0.6, -.2))).times(Mat4.rotation(Math.PI , 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-        back_legTwoTrans = back_legTwoTrans.times((Mat4.translation(-.15, 0.6, -.2))).times(Mat4.rotation(Math.PI , 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-        back_legThreeTrans = back_legThreeTrans.times((Mat4.translation(.15, 0.6, -.2))).times(Mat4.rotation(Math.PI , 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
+        back_legOneTrans = back_legOneTrans.times((Mat4.translation(0, 0.6, -.2))).times(Mat4.rotation(Math.PI, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
+        back_legTwoTrans = back_legTwoTrans.times((Mat4.translation(-.15, 0.6, -.2))).times(Mat4.rotation(Math.PI, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
+        back_legThreeTrans = back_legThreeTrans.times((Mat4.translation(.15, 0.6, -.2))).times(Mat4.rotation(Math.PI, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
 
         // Ant legs 
-        Front_legOneTrans = Front_legOneTrans.times((Mat4.translation(0, 0.4, .2))).times(Mat4.rotation(Math.PI/3 , 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-        Front_legTwoTrans = Front_legTwoTrans.times((Mat4.translation(-.15, 0.4, .2))).times(Mat4.rotation(Math.PI/3 , 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-        Front_legThreeTrans = Front_legThreeTrans.times((Mat4.translation(.15, 0.4, .2))).times(Mat4.rotation(Math.PI/3 , 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
+        Front_legOneTrans = Front_legOneTrans.times((Mat4.translation(0, 0.4, .2))).times(Mat4.rotation(Math.PI / 3, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
+        Front_legTwoTrans = Front_legTwoTrans.times((Mat4.translation(-.15, 0.4, .2))).times(Mat4.rotation(Math.PI / 3, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
+        Front_legThreeTrans = Front_legThreeTrans.times((Mat4.translation(.15, 0.4, .2))).times(Mat4.rotation(Math.PI / 3, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
 
         // Drawing all the planet shapes
         var matTwo = this.materials.antBody_front_PhoneShader
@@ -221,29 +253,29 @@ export class FinalProject extends Scene {
 
 
 
-        // This
-        this.shapes.antBody_front.draw(context, program_state, antBody_frontTrans,
-            matTwo)
-        this.shapes.antBody_middle.draw(context, program_state, antBody_middleTrans,
-            matThree);
-        this.shapes.antBody_end.draw(context, program_state, antBody_endTrans,
-            matFour);
-        this.shapes.buttDesign.draw(context, program_state, antBody_endTrans,
-            branchOne);
-        this.shapes.eyeball.draw(context, program_state, eyeballTrans, matEyeball);
-        this.shapes.back_legOne.draw(context, program_state, back_legOneTrans,
-            matback_legOne);
-        this.shapes.back_legTwo.draw(context, program_state, back_legTwoTrans,
-            matback_legTwo);
-        this.shapes.back_legThree.draw(context, program_state, back_legThreeTrans,
-            matback_legThree);
+        // // This
+        // this.shapes.antBody_front.draw(context, program_state, antBody_frontTrans,
+        //     matTwo)
+        // this.shapes.antBody_middle.draw(context, program_state, antBody_middleTrans,
+        //     matThree);
+        // this.shapes.antBody_end.draw(context, program_state, antBody_endTrans,
+        //     matFour);
+        // this.shapes.buttDesign.draw(context, program_state, antBody_endTrans,
+        //     branchOne);
+        // this.shapes.eyeball.draw(context, program_state, eyeballTrans, matEyeball);
+        // this.shapes.back_legOne.draw(context, program_state, back_legOneTrans,
+        //     matback_legOne);
+        // this.shapes.back_legTwo.draw(context, program_state, back_legTwoTrans,
+        //     matback_legTwo);
+        // this.shapes.back_legThree.draw(context, program_state, back_legThreeTrans,
+        //     matback_legThree);
 
-        this.shapes.Front_legOne.draw(context, program_state, Front_legOneTrans,
-            matFront_legOne);
-        this.shapes.Front_legTwo.draw(context, program_state, Front_legTwoTrans,
-            matFront_legTwo);
-        this.shapes.Front_legThree.draw(context, program_state, Front_legThreeTrans
-            , matFront_legThree);
+        // this.shapes.Front_legOne.draw(context, program_state, Front_legOneTrans,
+        //     matFront_legOne);
+        // this.shapes.Front_legTwo.draw(context, program_state, Front_legTwoTrans,
+        //     matFront_legTwo);
+        // this.shapes.Front_legThree.draw(context, program_state, Front_legThreeTrans
+        //     , matFront_legThree);
 
         if (this.attached != undefined) {
             //program_state.set_camera(Mat4.inverse(this.attached().map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blendingFactor))));
