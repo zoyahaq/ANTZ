@@ -1,7 +1,5 @@
 import { defs, tiny } from './examples/common.js';
 
-import Math;
-
 // Sraavya Pradeep
 
 const {
@@ -69,8 +67,16 @@ export class FinalProject extends Scene {
                 { ambient: .4, diffusivity: .6, color: hex_color("#CDEAC0") }),
             dirt_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#b5651e") }),
+            tree_block: new Material(new Gouraud_Shader(),
+                { ambient: .4, diffusivity: .6, color: hex_color("#5C4033") }),
+            grass_block: new Material(new Gouraud_Shader(),
+                { ambient: .4, diffusivity: .6, color: hex_color("#90EE90") }),
+            leaf_block: new Material(new Gouraud_Shader(),
+                { ambient: .4, diffusivity: .6, color: hex_color("#3A5F0B") }),
             ant_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#FF10F0") }),
+            food_block: new Material(new Gouraud_Shader(),
+                { ambient: .4, diffusivity: .6, color: hex_color("#FFA500") }),
             rock1: new Material(new defs.Phong_Shader(), rockInfo),
             rock2: new Material(new defs.Phong_Shader(), rockInfo),
             rock3: new Material(new defs.Phong_Shader(), rockInfo),
@@ -113,6 +119,7 @@ export class FinalProject extends Scene {
 
         }
 
+        this.ant_locations = [[28, 11, 5], [29, 11, 5], [29, 11, 6], [28, 11, 6]];
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.x_chunk_max = 30;
@@ -120,20 +127,43 @@ export class FinalProject extends Scene {
         this.z_chunk_max = 30;
 
         this.chunk_values = Array(this.x_chunk_max * this.y_chunk_max * this.z_chunk_max).fill(-1);
-        this.block_array = [this.materials.dirt_block, this.materials.ant_block];
 
-        this.set_block_position(5, 10, 5, 1);
-        this.set_block_positions([0, 10], [0, 10], [0, 10], 0);
+        this.block_array =
+            [
+                this.materials.dirt_block,
+                this.materials.ant_block,
+                this.materials.tree_block,
+                this.materials.grass_block,
+                this.materials.leaf_block,
+                this.materials.food_block
+            ];
 
-        this.time_diff = 0.0
+        this.set_block_positions([0, 30], [0, 10], [0, 30], 0);
+        this.set_block_positions([0, 30], [10, 11], [0, 30], 3);
+
+        this.set_block_positions([0, 4], [0, 4], [26, 30], 5);
+
+        this.set_block_positions([12, 18], [0, 22], [12, 18], 2);
+        this.set_block_positions([11, 19], [22, 23], [11, 19], 4);
+        this.set_block_positions([12, 18], [23, 24], [12, 18], 4);
+        this.set_block_positions([13, 17], [24, 25], [13, 17], 4);
+        this.set_block_positions([14, 16], [25, 26], [14, 16], 4);
+        this.set_block_positions([15, 16], [26, 27], [15, 16], 4);
+
+        this.time_diff = 0.0;
         this.time_limit = 1;
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-
         this.key_triggered_button("View Main Colony", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
+    }
+
+    set_all_ant_locs() {
+        for (let i = 0; i < this.ant_locations.length; i++) {
+            this.set_block_position(this.ant_locations[i][0], this.ant_locations[i][1], this.ant_locations[i][2], 1)
+        }
     }
 
     is_oob(x, y, z) {
@@ -143,22 +173,22 @@ export class FinalProject extends Scene {
     get_next_loc(cur_x, cur_y, cur_z, dir) {
         switch (dir) {
             case directions.pos_x:
-                this.[cur_x + 1, cur_y, cur_z, 1];
+                return [cur_x + 1, cur_y, cur_z];
                 break;
             case directions.neg_x:
-                this.[cur_x - 1, cur_y, cur_z, 1];
+                return [cur_x - 1, cur_y, cur_z];
                 break;
             case directions.pos_y:
-                this.[cur_x, cur_y + 1, cur_z, 1];
+                return [cur_x, cur_y + 1, cur_z];
                 break;
             case directions.neg_y:
-                this.[cur_x, cur_y - 1, cur_z, 1];
+                return [cur_x, cur_y - 1, cur_z];
                 break;
             case directions.pos_z:
-                this.[cur_x, cur_y, cur_z + 1, 1];
+                return [cur_x, cur_y, cur_z + 1];
                 break;
             case directions.neg_z:
-                this.[cur_x, cur_y, cur_z - 1, 1];
+                return [cur_x, cur_y, cur_z - 1];
                 break;
         }
     }
@@ -174,41 +204,99 @@ export class FinalProject extends Scene {
         return ret;
     }
 
-    is_valid_ant_move_loc(x, y, z) {
-        return !this.is_oob(x, y, z) && (this.get_block_position(x, y, z) == 0);
-    }
+    is_adjacent_to_block(x, y, z) {
+        const neg_pos = [-1, 1];
 
-    can_ant_move(cur_x, cur_y, cur_z){
-        let next_loc;
-        for (let i = 0; i < 6; i++){
-            next_loc = this.get_next_loc(cur_x, cur_y, cur_z, i);
-            if (!this.is_valid_ant_move_loc(next_loc[0], next_loc[1], next_loc[2])){
-                return false;
+        for (let i = 0; i < neg_pos.length; i++) {
+            for (let j = 0; j < neg_pos.length; j++) {
+                for (let k = 0; k < neg_pos.length; k++) {
+                    if (this.get_block_position(x + neg_pos[i], y + neg_pos[j], z + neg_pos[k]) != -1 && this.get_block_position(x + neg_pos[i], y + neg_pos[j], z + neg_pos[k]) != 1) {
+                        return true;
+                    }
+                }
             }
         }
-        return true;
+
+        return false;
     }
 
-    can_ant_move_dir(cur_x, cur_y, cur_z, dir) {
-        new_loc = this.get_next_loc(cur_x, cur_y, cur_z, dir);
+    is_block_breakable(x, y, z) {
+        // this.block_array = [this.materials.dirt_block, this.materials.ant_block, this.materials.tree_block, this.materials.grass_block, this.materials.leaf_block];
+        const block_val = this.get_block_position(x, y, z);
+        return (block_val == 0 || block_val == 3);
+    }
+
+    is_valid_ant_move_loc(x, y, z) {
+        return !this.is_oob(x, y, z) && this.is_block_breakable(x, y, z) && this.is_adjacent_to_block(x, y, z);
+    }
+
+    get_valid_ant_moves(ant_index) {
+        const cur_x = this.ant_locations[ant_index][0];
+        const cur_y = this.ant_locations[ant_index][1];
+        const cur_z = this.ant_locations[ant_index][2];
+
+        let valid_moves = [];
+        let next_loc;
+
+        for (let i = 0; i < 6; i++) {
+            next_loc = this.get_next_loc(cur_x, cur_y, cur_z, i);
+            if (this.is_valid_ant_move_loc(next_loc[0], next_loc[1], next_loc[2])) {
+                valid_moves.push(i);
+            }
+        }
+
+        return valid_moves;
+    }
+
+    can_ant_move(ant_index) {
+        const cur_x = this.ant_locations[ant_index][0];
+        const cur_y = this.ant_locations[ant_index][1];
+        const cur_z = this.ant_locations[ant_index][2];
+        let next_loc;
+        for (let j = 0; j < 6; j++) {
+            next_loc = this.get_next_loc(cur_x, cur_y, cur_z, j);
+            if (this.is_valid_ant_move_loc(next_loc[0], next_loc[1], next_loc[2])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    can_ant_move_dir(ant_index, dir) {
+        const cur_x = this.ant_locations[ant_index][0];
+        const cur_y = this.ant_locations[ant_index][1];
+        const cur_z = this.ant_locations[ant_index][2];
+        let new_loc = this.get_next_loc(cur_x, cur_y, cur_z, dir);
         return this.is_valid_ant_move_loc(new_loc[0], new_loc[1], new_loc[2]);
     }
 
-    move_ant(cur_x, cur_y, cur_z, dir) {
+    move_ant_dir(ant_index, dir) {
+        const cur_x = this.ant_locations[ant_index][0];
+        const cur_y = this.ant_locations[ant_index][1];
+        const cur_z = this.ant_locations[ant_index][2];
 
-        if (!this.can_ant_make_move(cur_x, cur_y, cur_z, dir)){
+        if (!this.can_ant_move_dir(ant_index, dir)) {
             return false;
         }
 
         this.set_block_position(cur_x, cur_y, cur_z, -1);
-        new_loc = this.get_next_loc(cur_x, cur_y, cur_z, dir);
-        this.set_block_position(new_loc[0], new_loc[1], new_loc[2]);
+        let new_loc = this.get_next_loc(cur_x, cur_y, cur_z, dir);
+        this.set_block_position(new_loc[0], new_loc[1], new_loc[2], 1);
+        this.ant_locations[ant_index] = new_loc;
         return true;
     }
 
-    move_ant_random(cur_x, cur_y, cur_z) {
-        let dir = Math.floor(Math.random() * 6);
-        while(!this.move_ant(dir))
+    move_ant_random(ant_index) {
+        const cur_x = this.ant_locations[ant_index][0];
+        const cur_y = this.ant_locations[ant_index][1];
+        const cur_z = this.ant_locations[ant_index][2];
+        let dir;
+        if (this.can_ant_move(ant_index)) {
+            dir = Math.floor(Math.random() * 6);
+            while (!this.move_ant_dir(ant_index, dir)) {
+                dir = Math.floor(Math.random() * 6);
+            }
+        }
     }
 
     set_block_positions(x_range, y_range, z_range, val) {
@@ -241,7 +329,9 @@ export class FinalProject extends Scene {
     }
 
     time_step() {
-
+        for (let i = 0; i < this.ant_locations.length; i++) {
+            this.move_ant_random(i);
+        }
     }
 
     display(context, program_state) {
