@@ -1,5 +1,7 @@
 import { defs, tiny } from './examples/common.js';
 
+import Math;
+
 // Sraavya Pradeep
 
 const {
@@ -22,7 +24,6 @@ var tree2 = [4, 5, 0];
 var rock1 = [-1, 0, -2];
 var rock2 = [1, 0, 2];
 var rock3 = [-1, 0, 2];
-
 
 class Cube_Outline extends Shape {
     constructor() {
@@ -47,7 +48,14 @@ class Cube_Outline extends Shape {
     }
 }
 
-
+const directions = {
+    pos_x: 0,
+    neg_x: 1,
+    pos_y: 2,
+    neg_y: 3,
+    pos_z: 4,
+    neg_z: 5
+};
 
 export class FinalProject extends Scene {
     constructor() {
@@ -86,9 +94,9 @@ export class FinalProject extends Scene {
             // dirt block -- garni
 
             dirt_block: new Material(new Gouraud_Shader(),
-                { ambient: .4, diffusivity: .6, color: hex_color("#ffc0cb") }),
-
-
+                { ambient: .4, diffusivity: .6, color: hex_color("#b5651e") }),
+            ant_block: new Material(new Gouraud_Shader(),
+                { ambient: .4, diffusivity: .6, color: hex_color("#FF10F0") }),
             rock1: new Material(new defs.Phong_Shader(), rockInfo),
             rock2: new Material(new defs.Phong_Shader(), rockInfo),
             rock3: new Material(new defs.Phong_Shader(), rockInfo),
@@ -139,18 +147,27 @@ export class FinalProject extends Scene {
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
-        this.x = 5;
-        this.y = 5;
-        this.z = 5;
+        this.x_chunk_max = 30;
+        this.y_chunk_max = 30;
+        this.z_chunk_max = 30;
+
+        this.chunk_values = Array(this.x_chunk_max * this.y_chunk_max * this.z_chunk_max).fill(-1);
+        this.block_array = [this.materials.dirt_block, this.materials.ant_block];
 
         this.block_positions = Array(this.x * this.y * this.z).fill(1);
 
         this.isOutlined = false;
+        
+        this.set_block_position(5, 10, 5, 1);
+        this.set_block_positions([0, 10], [0, 10], [0, 10], 0);
 
-
+        this.time_diff = 0.0
+        this.time_limit = 1;
     }
 
     make_control_panel() {
+        // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
+
         // Outline the toggle 
         this.key_triggered_button("Outline", ["o"], () => { this.isOutlined = !this.isOutlined; });
 
@@ -159,39 +176,113 @@ export class FinalProject extends Scene {
 
     }
 
+    is_oob(x, y, z) {
+        return x < 0 || x >= this.x_chunk_max || y < 0 || y >= this.y_chunk_max || z < 0 || z >= this.z_chunk_max;
+    }
+
+    get_next_loc(cur_x, cur_y, cur_z, dir) {
+        switch (dir) {
+            case directions.pos_x:
+                this.[cur_x + 1, cur_y, cur_z, 1];
+                break;
+            case directions.neg_x:
+                this.[cur_x - 1, cur_y, cur_z, 1];
+                break;
+            case directions.pos_y:
+                this.[cur_x, cur_y + 1, cur_z, 1];
+                break;
+            case directions.neg_y:
+                this.[cur_x, cur_y - 1, cur_z, 1];
+                break;
+            case directions.pos_z:
+                this.[cur_x, cur_y, cur_z + 1, 1];
+                break;
+            case directions.neg_z:
+                this.[cur_x, cur_y, cur_z - 1, 1];
+                break;
+        }
+    }
+
     get_block_position(x, y, z) {
-        return this.block_positions[this.y * this.z * x + this.z * y + z];
+        return this.chunk_values[this.y_chunk_max * this.z_chunk_max * x + this.z_chunk_max * y + z];
     }
 
     set_block_position(x, y, z, val) {
-        const ret = this.block_positions[this.y * this.z * x + this.z * y + z];
-        this.block_positions[this.y * this.z * x + this.z * y + z] = val;
+        const loc = this.y_chunk_max * this.z_chunk_max * x + this.z_chunk_max * y + z;
+        const ret = this.chunk_values[loc];
+        this.chunk_values[loc] = val;
         return ret;
     }
 
-    display_arrayed_objects(context, program_state, shape_obj, base_trans) {
-        for (let i = 0; i < this.x; i++) {
-            for (let j = 0; j < this.y; j++) {
-                for (let k = 0; k < this.z; k++) {
-                    if (this.get_block_position(i, j, k) == 1) {
+    is_valid_ant_move_loc(x, y, z) {
+        return !this.is_oob(x, y, z) && (this.get_block_position(x, y, z) == 0);
+    }
 
-                        if (this.isOutlined){
-                            //this.shapes.cube1.draw(context, program_state, base_trans.times(Mat4.translation(i, j, k)), shape_obj);
-                            this.shapes.outline.draw(context, program_state, base_trans.times(Mat4.translation(i, j, k)), this.white.override({color: hex_color('#ffc0cb')}), "LINES");
+    can_ant_move(cur_x, cur_y, cur_z){
+        let next_loc;
+        for (let i = 0; i < 6; i++){
+            next_loc = this.get_next_loc(cur_x, cur_y, cur_z, i);
+            if (!this.is_valid_ant_move_loc(next_loc[0], next_loc[1], next_loc[2])){
+                return false;
+            }
+        }
+        return true;
+    }
 
-                        }
-                        else{
+    can_ant_move_dir(cur_x, cur_y, cur_z, dir) {
+        new_loc = this.get_next_loc(cur_x, cur_y, cur_z, dir);
+        return this.is_valid_ant_move_loc(new_loc[0], new_loc[1], new_loc[2]);
+    }
 
-                            this.shapes.cube1.draw(context, program_state, base_trans.times(Mat4.translation(i, j, k)), shape_obj);
-                        }
+    move_ant(cur_x, cur_y, cur_z, dir) {
 
-                        // this.shapes.outline.draw(context, program_state, base_trans.times(Mat4.translation(i, j, k)), this.white, "LINES");
+        if (!this.can_ant_make_move(cur_x, cur_y, cur_z, dir)){
+            return false;
+        }
+
+        this.set_block_position(cur_x, cur_y, cur_z, -1);
+        new_loc = this.get_next_loc(cur_x, cur_y, cur_z, dir);
+        this.set_block_position(new_loc[0], new_loc[1], new_loc[2]);
+        return true;
+    }
+
+    move_ant_random(cur_x, cur_y, cur_z) {
+        let dir = Math.floor(Math.random() * 6);
+        while(!this.move_ant(dir))
+    }
+
+    set_block_positions(x_range, y_range, z_range, val) {
+        const yz = this.y_chunk_max * this.z_chunk_max;
+        for (let i = x_range[0]; i < x_range[1]; i++) {
+            const yzi = yz * i;
+            for (let j = y_range[0]; j < y_range[1]; j++) {
+                const zj = this.z_chunk_max * j;
+                for (let k = z_range[0]; k < z_range[1]; k++) {
+                    this.chunk_values[yzi + zj + k] = val;
+                }
+            }
+        }
+    }
+
+    display_arrayed_objects(context, program_state, shape_index, base_trans, x_range, y_range, z_range) {
+        for (let i = 0; i < this.x_chunk_max; i++) {
+            for (let j = 0; j < this.y_chunk_max; j++) {
+                for (let k = 0; k < this.z_chunk_max; k++) {
+                    const b_position = this.get_block_position(i, j, k);
+                    if (b_position != -1) {
+                        this.shapes.cube1.draw(context,
+                            program_state,
+                            base_trans.times(Mat4.translation(2 * i, 2 * j, 2 * k)),
+                            this.block_array[b_position]);
                     }
                 }
             }
         }
     }
 
+    time_step() {
+
+    }
 
     display(context, program_state) {
         // display():  Called once per frame of animation.
@@ -211,6 +302,7 @@ export class FinalProject extends Scene {
         const yellow = hex_color("#fac91a");
         let model_transform = Mat4.identity();
 
+        this.time_diff += dt;
 
         // const grass_trans = model_transform.times(Mat4.scale(15, 0.1, 15))
         const dirt_trans = model_transform.times(Mat4.translation(0, -1, 0))
@@ -307,8 +399,6 @@ export class FinalProject extends Scene {
         var matFront_legTwo = this.materials.Front_legTwo
         var matFront_legThree = this.materials.Front_legThree
 
-
-
         // // This
         // this.shapes.antBody_front.draw(context, program_state, antBody_frontTrans,
         //     matTwo)
@@ -333,12 +423,11 @@ export class FinalProject extends Scene {
         // this.shapes.Front_legThree.draw(context, program_state, Front_legThreeTrans
         //     , matFront_legThree);
 
-        if (this.attached != undefined) {
-            //program_state.set_camera(Mat4.inverse(this.attached().map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blendingFactor))));
-            program_state.camera_inverse = this.attached().map((x, i) => Vector.from(program_state.camera_inverse[i]).mix(x, blendingFactor));
-        } else {
-            program_state.set_camera(this.initial_camera_location);
+        if (this.time_diff > this.time_limit) {
+            this.time_step();
+            this.time_diff = 0.0;
         }
+
     }
 }
 
