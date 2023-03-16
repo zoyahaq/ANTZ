@@ -23,12 +23,39 @@ var rock1 = [-1, 0, -2];
 var rock2 = [1, 0, 2];
 var rock3 = [-1, 0, 2];
 
+
+class Cube_Outline extends Shape {
+    constructor() {
+        super("position", "color");
+        // TODO (Requirement 5).
+        // When a set of lines is used in graphics, you should think of the list entries as
+        // broken down into pairs; each pair of vertices will be drawn as a line segment.
+        // Note: since the outline is rendered with Basic_shader, you need to redefine the position and color of each vertex
+
+        // Draw each cube’s outline (the edges) in white
+        this.arrays.position.push(...Vector3.cast(
+            [1, 1, -1], [1, -1, -1], [-1, 1, 1], [-1, -1, 1], [1, 1, -1], [-1, 1, -1], [1, 1, 1], [-1, 1, 1],
+            [-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, 1], [1, -1, -1], [1, 1, 1], [1, 1, -1],
+            [1, -1, 1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [1, -1, -1], [-1, -1, -1], [-1, -1, -1], [-1, 1, -1]));
+
+        const white = color(1, 1, 1, 1);
+        for (let i = 0; i < 24; i++) {
+            this.arrays.color.push(white);
+        }
+
+        this.indexed = false;
+    }
+}
+
+
+
 export class FinalProject extends Scene {
     constructor() {
         // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
         super();
 
         this.shapes = {
+            'outline': new Cube_Outline(),
             cube1: new defs.Cube(),
             rock1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             rock2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
@@ -56,8 +83,12 @@ export class FinalProject extends Scene {
         this.materials = {
             grass_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#CDEAC0") }),
+            // dirt block -- garni
+
             dirt_block: new Material(new Gouraud_Shader(),
-                { ambient: .4, diffusivity: .6, color: hex_color("#b5651e") }),
+                { ambient: .4, diffusivity: .6, color: hex_color("#ffc0cb") }),
+
+
             rock1: new Material(new defs.Phong_Shader(), rockInfo),
             rock2: new Material(new defs.Phong_Shader(), rockInfo),
             rock3: new Material(new defs.Phong_Shader(), rockInfo),
@@ -100,6 +131,12 @@ export class FinalProject extends Scene {
 
         }
 
+        // The white material and basic shader are used for drawing the outline.
+        // this.white = new Material(new defs);
+        // this.black = new Material(new defs.Basic_Shader(), {color: hex_color("#000000")});
+        this.white = new Material(new defs.Basic_Shader(),
+        {});
+
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.x = 5;
@@ -107,40 +144,54 @@ export class FinalProject extends Scene {
         this.z = 5;
 
         this.block_positions = Array(this.x * this.y * this.z).fill(1);
+
+        this.isOutlined = false;
+
+
     }
 
     make_control_panel() {
-        // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-
+        // Outline the toggle 
+        this.key_triggered_button("Outline", ["o"], () => { this.isOutlined = !this.isOutlined; });
 
         this.key_triggered_button("View Main Colony", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
         this.new_line();
+
     }
 
-    get_block_position(x, y, z){
+    get_block_position(x, y, z) {
         return this.block_positions[this.y * this.z * x + this.z * y + z];
     }
 
-    set_block_position(x, y, z, val){
+    set_block_position(x, y, z, val) {
         const ret = this.block_positions[this.y * this.z * x + this.z * y + z];
         this.block_positions[this.y * this.z * x + this.z * y + z] = val;
         return ret;
     }
 
-    display_arrayed_objects(context, program_state, shape_obj, base_trans){
+    display_arrayed_objects(context, program_state, shape_obj, base_trans) {
         for (let i = 0; i < this.x; i++) {
             for (let j = 0; j < this.y; j++) {
                 for (let k = 0; k < this.z; k++) {
                     if (this.get_block_position(i, j, k) == 1) {
-                        this.shapes.cube1.draw(context,
-                            program_state,
-                            base_trans.times(Mat4.translation(i, j, k)),
-                            shape_obj);
+
+                        if (this.isOutlined){
+                            //this.shapes.cube1.draw(context, program_state, base_trans.times(Mat4.translation(i, j, k)), shape_obj);
+                            this.shapes.outline.draw(context, program_state, base_trans.times(Mat4.translation(i, j, k)), this.white.override({color: hex_color('#ffc0cb')}), "LINES");
+
+                        }
+                        else{
+
+                            this.shapes.cube1.draw(context, program_state, base_trans.times(Mat4.translation(i, j, k)), shape_obj);
+                        }
+
+                        // this.shapes.outline.draw(context, program_state, base_trans.times(Mat4.translation(i, j, k)), this.white, "LINES");
                     }
                 }
             }
         }
     }
+
 
     display(context, program_state) {
         // display():  Called once per frame of animation.
@@ -163,7 +214,12 @@ export class FinalProject extends Scene {
 
         // const grass_trans = model_transform.times(Mat4.scale(15, 0.1, 15))
         const dirt_trans = model_transform.times(Mat4.translation(0, -1, 0))
-        this.display_arrayed_objects(context, program_state, this.materials.dirt_block, dirt_trans);
+
+
+        // drawing all the blocks 
+       //  this.display_arrayed_objects(context, program_state, this.materials.dirt_block, dirt_trans);
+
+  
 
         // this.shapes.cube1.draw(context, program_state, grass_trans, this.materials.grass_block)
         // this.shapes.cube1.draw(context, program_state, dirt_trans, this.materials.dirt_block)
@@ -424,6 +480,8 @@ class Gouraud_Shader extends Shader {
         gl.uniform4fv(gpu.light_colors, light_colors_flattened);
         gl.uniform1fv(gpu.light_attenuation_factors, gpu_state.lights.map(l => l.attenuation));
     }
+
+
 
     update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
         // update_GPU(): Define how to synchronize our JavaScript's variables to the GPU's.  This is where the shader
