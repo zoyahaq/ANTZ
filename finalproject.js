@@ -397,7 +397,7 @@ export class FinalProject extends Scene {
 
 
         // drawing all the blocks 
-       //  this.display_arrayed_objects(context, program_state, this.materials.dirt_block, dirt_trans);
+        this.display_arrayed_objects(context, program_state, this.materials.dirt_block, dirt_trans);
 
   
 
