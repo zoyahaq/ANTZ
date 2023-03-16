@@ -198,13 +198,26 @@ export class FinalProject extends Scene {
 
         // Outline the toggle 
         this.key_triggered_button("View Digging Path", ["v"], () => { this.isOutlined = !this.isOutlined; });
+        this.key_triggered_button("Add Ant Into World", ["m"], () => { this.add_ant_random(); });
         this.key_triggered_button("Reset World", ["g"], () => { this.reset_world(); });
-
-        this.key_triggered_button("Increase Frame Rate", ["k"], () => { this.frame_period *= 0.9; });
-        this.key_triggered_button("Decrease Frame Rate", ["j"], () => { this.frame_period /= 0.9; });
         this.key_triggered_button("Pause Time", ["h"], () => { this.pause_time = !this.pause_time; });
+        this.key_triggered_button("Increase Frame Rate", ["k"], () => { this.frame_period *= 0.9; });
+        this.key_triggered_button("Decrease Frame Rate", ["j"], () => { this.frame_period *= 1.11111111111; });
         this.new_line();
 
+    }
+
+    add_ant_random() {
+        let x = Math.floor(Math.random() * this.x_chunk_max);
+        let y = Math.floor(Math.random() * this.y_chunk_max);
+        let z = Math.floor(Math.random() * this.z_chunk_max);
+        while (!this.is_valid_ant_move_loc(x, y, z)) {
+            x = Math.floor(Math.random() * this.x_chunk_max);
+            y = Math.floor(Math.random() * this.y_chunk_max);
+            z = Math.floor(Math.random() * this.z_chunk_max);
+        }
+        this.ant_locations.push([x, y, z]);
+        this.set_block_position(x, y, z, 1);
     }
 
     reset_world() {
@@ -279,7 +292,7 @@ export class FinalProject extends Scene {
         this.chunk_values[loc] = val;
         return ret;
     }
-    
+
     is_adjacent_to_block(x, y, z) {
         for (let i = -1; i <= 1; i++) {
             for (let j = -1; j < 1; j++) {
@@ -302,7 +315,7 @@ export class FinalProject extends Scene {
         return (block_val == 0 || block_val == 3 || block_val == 5);
     }
 
-    is_block_air(x, y, z){
+    is_block_air(x, y, z) {
         const block_val = this.get_block_position(x, y, z);
         return (block_val == -1 || block_val == 6);
     }
@@ -401,13 +414,13 @@ export class FinalProject extends Scene {
                     const b_position = this.get_block_position(i, j, k);
                     if (b_position != -1) {
                         if (this.isOutlined) {
-                            if (b_position == 6 || b_position == 1){
+                            if (b_position == 6 || b_position == 1) {
                                 this.shapes.cube1.draw(context,
                                     program_state,
                                     base_trans.times(Mat4.translation(2 * i, 2 * j, 2 * k)),
                                     this.block_array[b_position]);
                             }
-                        } else if (b_position != 6){
+                        } else if (b_position != 6) {
                             this.shapes.cube1.draw(context,
                                 program_state,
                                 base_trans.times(Mat4.translation(2 * i, 2 * j, 2 * k)),
