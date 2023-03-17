@@ -177,14 +177,17 @@ export class FinalProject extends Scene {
                 this.materials.grass_block,
                 this.materials.leaf_block,
                 this.materials.food_block,
-                this.materials.dug_out_block, 
+                this.materials.dug_out_block,
                 this.materials.rock_block //7
             ];
 
         this.set_block_positions([0, 30], [0, 10], [0, 30], 0);
         this.set_block_positions([0, 30], [10, 11], [0, 30], 3);
 
+        this.set_block_positions([0, 4], [0, 4], [0, 4], 5);
+        this.set_block_positions([26, 30], [0, 4], [0, 4], 5);
         this.set_block_positions([0, 4], [0, 4], [26, 30], 5);
+        this.set_block_positions([26, 30], [0, 4], [26, 30], 5);
 
         this.set_block_positions([12, 18], [0, 22], [12, 18], 2);
         this.set_block_positions([11, 19], [22, 23], [11, 19], 4);
@@ -252,7 +255,7 @@ export class FinalProject extends Scene {
     }
 
     reset_world() {
-        this.ant_locations = [[28, 10, 5], [29, 10, 5], [29, 10, 6], [28, 10, 6]];
+        this.ant_locations = [];
         this.chunk_values = Array(this.x_chunk_max * this.y_chunk_max * this.z_chunk_max).fill(-1);
         this.dug_out_block_values = Array(this.x_chunk_max * this.y_chunk_max * this.z_chunk_max).fill(0);
 
@@ -264,13 +267,17 @@ export class FinalProject extends Scene {
                 this.materials.grass_block,
                 this.materials.leaf_block,
                 this.materials.food_block,
-                this.materials.dug_out_block
+                this.materials.dug_out_block,
+                this.materials.rock_block //7
             ];
 
         this.set_block_positions([0, 30], [0, 10], [0, 30], 0);
         this.set_block_positions([0, 30], [10, 11], [0, 30], 3);
 
+        this.set_block_positions([0, 4], [0, 4], [0, 4], 5);
+        this.set_block_positions([26, 30], [0, 4], [0, 4], 5);
         this.set_block_positions([0, 4], [0, 4], [26, 30], 5);
+        this.set_block_positions([26, 30], [0, 4], [26, 30], 5);
 
         this.set_block_positions([12, 18], [0, 22], [12, 18], 2);
         this.set_block_positions([11, 19], [22, 23], [11, 19], 4);
@@ -278,6 +285,31 @@ export class FinalProject extends Scene {
         this.set_block_positions([13, 17], [24, 25], [13, 17], 4);
         this.set_block_positions([14, 16], [25, 26], [14, 16], 4);
         this.set_block_positions([15, 16], [26, 27], [15, 16], 4);
+
+        this.set_block_positions([0, 1], [7, 13], [0, 3], 7);
+        this.set_block_positions([1, 2], [8, 12], [0, 3], 7);
+        this.set_block_positions([2, 3], [9, 11], [0, 3], 7);
+        this.set_block_positions([0, 2], [9, 12], [3, 4], 7);
+
+        this.set_block_positions([19, 21], [7, 13], [0, 3], 7);
+        this.set_block_positions([18, 22], [8, 12], [0, 3], 7);
+        this.set_block_positions([18, 23], [9, 11], [0, 3], 7);
+        this.set_block_positions([20, 22], [9, 12], [3, 4], 7);
+
+        this.set_block_positions([0, 1], [7, 13], [20, 22], 7);
+        this.set_block_positions([1, 2], [8, 12], [20, 23], 7);
+        this.set_block_positions([2, 3], [9, 11], [20, 22], 7);
+        this.set_block_positions([0, 2], [9, 12], [23, 24], 7);
+
+        this.set_block_positions([14, 16], [7, 13], [19, 23], 7);
+        this.set_block_positions([13, 17], [8, 12], [20, 23], 7);
+        this.set_block_positions([13, 18], [9, 11], [19, 23], 7);
+        this.set_block_positions([15, 17], [9, 12], [23, 24], 7);
+
+        this.set_block_positions([25, 27], [7, 13], [26, 28], 7);
+        this.set_block_positions([24, 28], [8, 12], [25, 28], 7);
+        this.set_block_positions([24, 29], [9, 11], [24, 28], 7);
+        this.set_block_positions([26, 28], [9, 12], [28, 29], 7);
     }
 
     set_all_ant_locs() {
@@ -336,8 +368,41 @@ export class FinalProject extends Scene {
                 }
             }
         }
+        return false;
+    }
+
+    is_near_food_source(ant_index) {
+        const cur_x = this.ant_locations[ant_index][0];
+        const cur_y = this.ant_locations[ant_index][1];
+        const cur_z = this.ant_locations[ant_index][2];
+
+        let next_loc;
+
+        for (let i = 0; i < 6; i++) {
+            next_loc = this.get_next_loc(cur_x, cur_y, cur_z, i);
+            if (!this.is_oob(next_loc[0], next_loc[1], next_loc[2]) && this.get_block_position(next_loc[0], next_loc[1], next_loc[2]) == 5) {
+                return true;
+            }
+        }
 
         return false;
+    }
+
+    get_food_source_dir(ant_index) {
+        const cur_x = this.ant_locations[ant_index][0];
+        const cur_y = this.ant_locations[ant_index][1];
+        const cur_z = this.ant_locations[ant_index][2];
+
+        let next_loc;
+
+        for (let i = 0; i < 6; i++) {
+            next_loc = this.get_next_loc(cur_x, cur_y, cur_z, i);
+            if (!this.is_oob(next_loc[0], next_loc[1], next_loc[2]) && this.get_block_position(next_loc[0], next_loc[1], next_loc[2]) == 5) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     is_block_breakable(x, y, z) {
@@ -416,12 +481,21 @@ export class FinalProject extends Scene {
         const cur_x = this.ant_locations[ant_index][0];
         const cur_y = this.ant_locations[ant_index][1];
         const cur_z = this.ant_locations[ant_index][2];
+
         let dir;
+        let food_dir;
+
         if (this.can_ant_move(ant_index)) {
-            dir = Math.floor(Math.random() * 6);
-            while (!this.move_ant_dir(ant_index, dir)) {
+            food_dir = this.get_food_source_dir(ant_index);
+            if (food_dir != -1) {
+                this.move_ant_dir(ant_index, food_dir);
+            } else {
                 dir = Math.floor(Math.random() * 6);
+                while (!this.move_ant_dir(ant_index, dir)) {
+                    dir = Math.floor(Math.random() * 6);
+                }
             }
+
         }
     }
 
@@ -581,7 +655,7 @@ export class FinalProject extends Scene {
         this.t2l3 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.t2l4 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.branch2 = Mat4.inverse(treeTransform.times(inverseTranslate));
-   
+
         var antBody_frontTrans = model_transform;
         var antBody_middleTrans = model_transform;
         var antBody_endTrans = model_transform;
@@ -626,31 +700,6 @@ export class FinalProject extends Scene {
         var matFront_legOne = this.materials.Front_legOne
         var matFront_legTwo = this.materials.Front_legTwo
         var matFront_legThree = this.materials.Front_legThree
-
-        // // This
-        // this.shapes.antBody_front.draw(context, program_state, antBody_frontTrans,
-        //     matTwo)
-        // this.shapes.antBody_middle.draw(context, program_state, antBody_middleTrans,
-        //     matThree);
-        // this.shapes.antBody_end.draw(context, program_state, antBody_endTrans,
-        //     matFour);
-        // this.shapes.buttDesign.draw(context, program_state, antBody_endTrans,
-        //     branchOne);
-        // this.shapes.eyeball.draw(context, program_state, eyeballTrans, matEyeball);
-        // this.shapes.back_legOne.draw(context, program_state, back_legOneTrans,
-        //     matback_legOne);
-        // this.shapes.back_legTwo.draw(context, program_state, back_legTwoTrans,
-        //     matback_legTwo);
-        // this.shapes.back_legThree.draw(context, program_state, back_legThreeTrans,
-        //     matback_legThree);
-
-        // this.shapes.Front_legOne.draw(context, program_state, Front_legOneTrans,
-        //     matFront_legOne);
-        // this.shapes.Front_legTwo.draw(context, program_state, Front_legTwoTrans,
-        //     matFront_legTwo);
-        // this.shapes.Front_legThree.draw(context, program_state, Front_legThreeTrans
-        //     , matFront_legThree);
-        console.log(this.frame_period);
 
         if (!this.pause_time && this.time_diff > this.frame_period) {
             this.time_step();
