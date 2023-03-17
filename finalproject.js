@@ -110,6 +110,8 @@ export class FinalProject extends Scene {
                 { ambient: .4, diffusivity: .6, color: hex_color("#FFA500") }),
             dug_out_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#ffffff") }),
+            rock_block: new Material(new Gouraud_Shader(),
+                { ambient: .4, diffusivity: .6, color: hex_color("#808080") }),
             rock1: new Material(new defs.Phong_Shader(), rockInfo),
             rock2: new Material(new defs.Phong_Shader(), rockInfo),
             rock3: new Material(new defs.Phong_Shader(), rockInfo),
@@ -151,7 +153,7 @@ export class FinalProject extends Scene {
                 { ambient: 0, specularity: 1, color: hex_color("#C4A484") }),
         }
 
-        this.ant_locations = [[28, 10, 5], [29, 10, 5], [29, 10, 6], [28, 10, 6]];
+        this.ant_locations = [];
 
         // The white material and basic shader are used for drawing the outline.
         // this.white = new Material(new defs);
@@ -175,7 +177,8 @@ export class FinalProject extends Scene {
                 this.materials.grass_block,
                 this.materials.leaf_block,
                 this.materials.food_block,
-                this.materials.dug_out_block
+                this.materials.dug_out_block, 
+                this.materials.rock_block //7
             ];
 
         this.set_block_positions([0, 30], [0, 10], [0, 30], 0);
@@ -190,7 +193,30 @@ export class FinalProject extends Scene {
         this.set_block_positions([14, 16], [25, 26], [14, 16], 4);
         this.set_block_positions([15, 16], [26, 27], [15, 16], 4);
 
-        this.current_movement_algo = this.move_ant_random;
+        this.set_block_positions([0, 1], [7, 13], [0, 3], 7);
+        this.set_block_positions([1, 2], [8, 12], [0, 3], 7);
+        this.set_block_positions([2, 3], [9, 11], [0, 3], 7);
+        this.set_block_positions([0, 2], [9, 12], [3, 4], 7);
+
+        this.set_block_positions([19, 21], [7, 13], [0, 3], 7);
+        this.set_block_positions([18, 22], [8, 12], [0, 3], 7);
+        this.set_block_positions([18, 23], [9, 11], [0, 3], 7);
+        this.set_block_positions([20, 22], [9, 12], [3, 4], 7);
+
+        this.set_block_positions([0, 1], [7, 13], [20, 22], 7);
+        this.set_block_positions([1, 2], [8, 12], [20, 23], 7);
+        this.set_block_positions([2, 3], [9, 11], [20, 22], 7);
+        this.set_block_positions([0, 2], [9, 12], [23, 24], 7);
+
+        this.set_block_positions([14, 16], [7, 13], [19, 23], 7);
+        this.set_block_positions([13, 17], [8, 12], [20, 23], 7);
+        this.set_block_positions([13, 18], [9, 11], [19, 23], 7);
+        this.set_block_positions([15, 17], [9, 12], [23, 24], 7);
+
+        this.set_block_positions([25, 27], [7, 13], [26, 28], 7);
+        this.set_block_positions([24, 28], [8, 12], [25, 28], 7);
+        this.set_block_positions([24, 29], [9, 11], [24, 28], 7);
+        this.set_block_positions([26, 28], [9, 12], [28, 29], 7);
 
         this.isOutlined = false;
         this.time_diff = 0.0;
@@ -203,13 +229,26 @@ export class FinalProject extends Scene {
 
         // Outline the toggle 
         this.key_triggered_button("View Digging Path", ["v"], () => { this.isOutlined = !this.isOutlined; });
+        this.key_triggered_button("Add Ant Into World", ["m"], () => { this.add_ant_random(); });
         this.key_triggered_button("Reset World", ["g"], () => { this.reset_world(); });
-
-        this.key_triggered_button("Increase Frame Rate", ["k"], () => { this.frame_period *= 0.9; });
-        this.key_triggered_button("Decrease Frame Rate", ["j"], () => { this.frame_period /= 0.9; });
         this.key_triggered_button("Pause Time", ["h"], () => { this.pause_time = !this.pause_time; });
+        this.key_triggered_button("Increase Frame Rate", ["k"], () => { this.frame_period *= 0.9; });
+        this.key_triggered_button("Decrease Frame Rate", ["j"], () => { this.frame_period *= 1.11111111111; });
         this.new_line();
 
+    }
+
+    add_ant_random() {
+        let x = Math.floor(Math.random() * this.x_chunk_max);
+        let y = Math.floor(Math.random() * this.y_chunk_max);
+        let z = Math.floor(Math.random() * this.z_chunk_max);
+        while (this.is_oob(x, y, z) || !this.is_adjacent_to_block(x, y, z) || !this.is_block_air(x, y, z)) {
+            x = Math.floor(Math.random() * this.x_chunk_max);
+            y = Math.floor(Math.random() * this.y_chunk_max);
+            z = Math.floor(Math.random() * this.z_chunk_max);
+        }
+        this.ant_locations.push([x, y, z]);
+        this.set_block_position(x, y, z, 1);
     }
 
     reset_world() {
@@ -518,7 +557,6 @@ export class FinalProject extends Scene {
 
         // drawing all the blocks 
         this.display_arrayed_objects(context, program_state, this.materials.dirt_block, dirt_trans);
-
 
 
         var rockTransform = Mat4.identity();
