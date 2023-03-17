@@ -146,7 +146,7 @@ export class FinalProject extends Scene {
                 { ambient: 0, specularity: 1, color: hex_color("#C4A484") }),
         }
 
-        this.ant_locations = [[28, 10, 5], [29, 10, 5], [29, 10, 6], [28, 10, 6]];
+        this.ant_locations = [];
 
         // The white material and basic shader are used for drawing the outline.
         // this.white = new Material(new defs);
@@ -185,8 +185,6 @@ export class FinalProject extends Scene {
         this.set_block_positions([14, 16], [25, 26], [14, 16], 4);
         this.set_block_positions([15, 16], [26, 27], [15, 16], 4);
 
-        this.current_movement_algo = this.move_ant_random;
-
         this.isOutlined = false;
         this.time_diff = 0.0;
         this.frame_period = 1;
@@ -211,7 +209,7 @@ export class FinalProject extends Scene {
         let x = Math.floor(Math.random() * this.x_chunk_max);
         let y = Math.floor(Math.random() * this.y_chunk_max);
         let z = Math.floor(Math.random() * this.z_chunk_max);
-        while (!this.is_valid_ant_move_loc(x, y, z)) {
+        while (this.is_oob(x, y, z) || !this.is_adjacent_to_block(x, y, z) || !this.is_block_air(x, y, z)) {
             x = Math.floor(Math.random() * this.x_chunk_max);
             y = Math.floor(Math.random() * this.y_chunk_max);
             z = Math.floor(Math.random() * this.z_chunk_max);
