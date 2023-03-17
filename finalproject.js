@@ -63,6 +63,10 @@ export class FinalProject extends Scene {
         this.shapes = {
             'outline': new Cube_Outline(),
             cube1: new defs.Cube(),
+            sphere: new defs.Subdivision_Sphere(4),
+            cylinder: new defs.Cylindrical_Tube(15, 20),
+
+
             rock1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             rock2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             rock3: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
@@ -99,10 +103,13 @@ export class FinalProject extends Scene {
                 { ambient: .4, diffusivity: .6, color: hex_color("#90EE90") }),
             leaf_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#3A5F0B") }),
+
             ant_block: new Material(new Gouraud_Shader(),
-                { ambient: .4, diffusivity: .6, color: hex_color("#FF10F0") }),
+                { ambient: .4, diffusivity: .6, color: hex_color("#C4A484") }),
             food_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#FFA500") }),
+            dug_out_block: new Material(new Gouraud_Shader(),
+                { ambient: .4, diffusivity: .6, color: hex_color("#ffffff") }),
             rock1: new Material(new defs.Phong_Shader(), rockInfo),
             rock2: new Material(new defs.Phong_Shader(), rockInfo),
             rock3: new Material(new defs.Phong_Shader(), rockInfo),
@@ -142,16 +149,15 @@ export class FinalProject extends Scene {
 
             Front_legThree: new Material(new defs.Phong_Shader(),
                 { ambient: 0, specularity: 1, color: hex_color("#C4A484") }),
-
         }
 
-        this.ant_locations = [[28, 11, 5], [29, 11, 5], [29, 11, 6], [28, 11, 6]];
-        
+        this.ant_locations = [[28, 10, 5], [29, 10, 5], [29, 10, 6], [28, 10, 6]];
+
         // The white material and basic shader are used for drawing the outline.
         // this.white = new Material(new defs);
         // this.black = new Material(new defs.Basic_Shader(), {color: hex_color("#000000")});
         this.white = new Material(new defs.Basic_Shader(),
-        {});
+            {});
         this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.x_chunk_max = 30;
@@ -159,6 +165,7 @@ export class FinalProject extends Scene {
         this.z_chunk_max = 30;
 
         this.chunk_values = Array(this.x_chunk_max * this.y_chunk_max * this.z_chunk_max).fill(-1);
+        this.dug_out_block_values = Array(this.x_chunk_max * this.y_chunk_max * this.z_chunk_max).fill(0);
 
         this.block_array =
             [
@@ -167,7 +174,8 @@ export class FinalProject extends Scene {
                 this.materials.tree_block,
                 this.materials.grass_block,
                 this.materials.leaf_block,
-                this.materials.food_block
+                this.materials.food_block,
+                this.materials.dug_out_block
             ];
 
         this.set_block_positions([0, 30], [0, 10], [0, 30], 0);
@@ -182,20 +190,55 @@ export class FinalProject extends Scene {
         this.set_block_positions([14, 16], [25, 26], [14, 16], 4);
         this.set_block_positions([15, 16], [26, 27], [15, 16], 4);
 
+        this.current_movement_algo = this.move_ant_random;
+
         this.isOutlined = false;
         this.time_diff = 0.0;
-        this.time_limit = 1;
+        this.frame_period = 1;
+        this.pause_time = false;
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
 
         // Outline the toggle 
-        this.key_triggered_button("Outline", ["o"], () => { this.isOutlined = !this.isOutlined; });
+        this.key_triggered_button("View Digging Path", ["v"], () => { this.isOutlined = !this.isOutlined; });
+        this.key_triggered_button("Reset World", ["g"], () => { this.reset_world(); });
 
-        this.key_triggered_button("View Main Colony", ["Control", "0"], () => this.attached = () => this.initial_camera_location);
+        this.key_triggered_button("Increase Frame Rate", ["k"], () => { this.frame_period *= 0.9; });
+        this.key_triggered_button("Decrease Frame Rate", ["j"], () => { this.frame_period /= 0.9; });
+        this.key_triggered_button("Pause Time", ["h"], () => { this.pause_time = !this.pause_time; });
         this.new_line();
 
+    }
+
+    reset_world() {
+        this.ant_locations = [[28, 10, 5], [29, 10, 5], [29, 10, 6], [28, 10, 6]];
+        this.chunk_values = Array(this.x_chunk_max * this.y_chunk_max * this.z_chunk_max).fill(-1);
+        this.dug_out_block_values = Array(this.x_chunk_max * this.y_chunk_max * this.z_chunk_max).fill(0);
+
+        this.block_array =
+            [
+                this.materials.dirt_block,
+                this.materials.ant_block,
+                this.materials.tree_block,
+                this.materials.grass_block,
+                this.materials.leaf_block,
+                this.materials.food_block,
+                this.materials.dug_out_block
+            ];
+
+        this.set_block_positions([0, 30], [0, 10], [0, 30], 0);
+        this.set_block_positions([0, 30], [10, 11], [0, 30], 3);
+
+        this.set_block_positions([0, 4], [0, 4], [26, 30], 5);
+
+        this.set_block_positions([12, 18], [0, 22], [12, 18], 2);
+        this.set_block_positions([11, 19], [22, 23], [11, 19], 4);
+        this.set_block_positions([12, 18], [23, 24], [12, 18], 4);
+        this.set_block_positions([13, 17], [24, 25], [13, 17], 4);
+        this.set_block_positions([14, 16], [25, 26], [14, 16], 4);
+        this.set_block_positions([15, 16], [26, 27], [15, 16], 4);
     }
 
     set_all_ant_locs() {
@@ -243,13 +286,13 @@ export class FinalProject extends Scene {
     }
 
     is_adjacent_to_block(x, y, z) {
-        const neg_pos = [-1, 1];
-
-        for (let i = 0; i < neg_pos.length; i++) {
-            for (let j = 0; j < neg_pos.length; j++) {
-                for (let k = 0; k < neg_pos.length; k++) {
-                    if (this.get_block_position(x + neg_pos[i], y + neg_pos[j], z + neg_pos[k]) != -1 && this.get_block_position(x + neg_pos[i], y + neg_pos[j], z + neg_pos[k]) != 1) {
-                        return true;
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j < 1; j++) {
+                for (let k = -1; k < 1; k++) {
+                    if (i != 0 || j != 0 || k != 0) {
+                        if (this.get_block_position(x + i, y + j, z + k) != -1 && this.get_block_position(x + i, y + j, z + k) != 1 && this.get_block_position(x + i, y + j, z + k) != 6) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -261,11 +304,16 @@ export class FinalProject extends Scene {
     is_block_breakable(x, y, z) {
         // this.block_array = [this.materials.dirt_block, this.materials.ant_block, this.materials.tree_block, this.materials.grass_block, this.materials.leaf_block];
         const block_val = this.get_block_position(x, y, z);
-        return (block_val == 0 || block_val == 3);
+        return (block_val == 0 || block_val == 3 || block_val == 5);
+    }
+
+    is_block_air(x, y, z) {
+        const block_val = this.get_block_position(x, y, z);
+        return (block_val == -1 || block_val == 6);
     }
 
     is_valid_ant_move_loc(x, y, z) {
-        return !this.is_oob(x, y, z) && this.is_block_breakable(x, y, z) && this.is_adjacent_to_block(x, y, z);
+        return !this.is_oob(x, y, z) && this.is_adjacent_to_block(x, y, z) && (this.is_block_breakable(x, y, z) || this.is_block_air(x, y, z));
     }
 
     get_valid_ant_moves(ant_index) {
@@ -317,7 +365,8 @@ export class FinalProject extends Scene {
             return false;
         }
 
-        this.set_block_position(cur_x, cur_y, cur_z, -1);
+        this.set_block_position(cur_x, cur_y, cur_z, 6);
+
         let new_loc = this.get_next_loc(cur_x, cur_y, cur_z, dir);
         this.set_block_position(new_loc[0], new_loc[1], new_loc[2], 1);
         this.ant_locations[ant_index] = new_loc;
@@ -356,10 +405,81 @@ export class FinalProject extends Scene {
                 for (let k = 0; k < this.z_chunk_max; k++) {
                     const b_position = this.get_block_position(i, j, k);
                     if (b_position != -1) {
-                        this.shapes.cube1.draw(context,
-                            program_state,
-                            base_trans.times(Mat4.translation(2 * i, 2 * j, 2 * k)),
-                            this.block_array[b_position]);
+                        if (b_position == 1) {
+                            const trans_origin = base_trans.times(Mat4.translation(2 * i, 2 * j, 2 * k));
+                            const front_body = trans_origin.times(Mat4.translation(-0.7, 0, 0)).times(Mat4.scale(.7, .7, .7))
+                            const middle_body = trans_origin.times(Mat4.scale(.6, .6, .6))
+                            const back_body = trans_origin.times(Mat4.translation(1, 0, 0)).times(Mat4.scale(.9, .9, .9))
+
+                            const leg_front = trans_origin.times(Mat4.translation(-0.3, 0, 0.5)).times(Mat4.rotation(220 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+                            const leg_middle = trans_origin.times(Mat4.translation(0, 0, 0.5)).times(Mat4.rotation(220 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+                            const leg_back = trans_origin.times(Mat4.translation(0.3, 0, 0.5)).times(Mat4.rotation(220 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+
+
+                            const b_leg_front = trans_origin.times(Mat4.translation(-0.3, -0.5, -0.5)).times(Mat4.rotation(100 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+                            const b_leg_middle = trans_origin.times(Mat4.translation(0, -0.5, -0.5)).times(Mat4.rotation(100 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+                            const b_leg_back = trans_origin.times(Mat4.translation(0.3, -0.5, -0.5)).times(Mat4.rotation(100 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+
+                            // antBody_frontTrans = antBody_frontTrans.times((Mat4.translation(-.4, 0.5, 0))).times(Mat4.scale(.3, .3, .3));
+
+                            this.shapes.sphere.draw(context,
+                                program_state,
+                                middle_body,
+                                this.materials.ant_block);
+
+                            this.shapes.sphere.draw(context,
+                                program_state,
+                                front_body,
+                                this.materials.ant_block);
+
+                            this.shapes.sphere.draw(context,
+                                program_state,
+                                back_body,
+                                this.materials.ant_block);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                leg_front,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                leg_middle,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                leg_back,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                b_leg_front,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                b_leg_middle,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                b_leg_back,
+                                this.materials.back_legOne);
+                        }
+                        else if (this.isOutlined) {
+                            if (b_position == 6) {
+                                this.shapes.cube1.draw(context,
+                                    program_state,
+                                    base_trans.times(Mat4.translation(2 * i, 2 * j, 2 * k)),
+                                    this.block_array[b_position]);
+                            }
+                        } else if (b_position != 6) {
+                            this.shapes.cube1.draw(context,
+                                program_state,
+                                base_trans.times(Mat4.translation(2 * i, 2 * j, 2 * k)),
+                                this.block_array[b_position]);
+                        }
                     }
                 }
             }
@@ -393,17 +513,13 @@ export class FinalProject extends Scene {
         this.time_diff += dt;
 
         // const grass_trans = model_transform.times(Mat4.scale(15, 0.1, 15))
-        const dirt_trans = model_transform.times(Mat4.translation(0, -1, 0))
+        const dirt_trans = model_transform.times(Mat4.translation(-30, -50, -100))
 
 
         // drawing all the blocks 
         this.display_arrayed_objects(context, program_state, this.materials.dirt_block, dirt_trans);
 
-  
 
-        // this.shapes.cube1.draw(context, program_state, grass_trans, this.materials.grass_block)
-        // this.shapes.cube1.draw(context, program_state, dirt_trans, this.materials.dirt_block)
-        // this.shapes.cube1.draw(context, program_state, dirt_trans.times(Mat4.translation(0, -1, 0)), this.materials.dirt_block)
 
         var rockTransform = Mat4.identity();
         var treeTransform = Mat4.identity();
@@ -412,9 +528,6 @@ export class FinalProject extends Scene {
         this.rock1 = Mat4.inverse(rockTransform.times(inverseTranslate));
         this.rock2 = Mat4.inverse(rockTransform.times(inverseTranslate));
         this.rock3 = Mat4.inverse(rockTransform.times(inverseTranslate));
-        // this.shapes.rock1.draw(context, program_state, rockTransform.times(Mat4.translation(rock1[0], rock1[1], rock1[2])), this.materials.rock1);
-        // this.shapes.rock2.draw(context, program_state, rockTransform.times(Mat4.translation(rock2[0], rock2[1], rock2[2])), this.materials.rock1);
-        // this.shapes.rock3.draw(context, program_state, rockTransform.times(Mat4.translation(rock3[0], rock3[1], rock3[2])), this.materials.rock1);
 
         // tree 1
         this.t1l1 = Mat4.inverse(treeTransform.times(inverseTranslate));
@@ -422,12 +535,7 @@ export class FinalProject extends Scene {
         this.t1l3 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.t1l4 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.branch1 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        // this.shapes.t1l1.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0], tree1[1] + 0.5, tree1[2])), this.materials.t1l1);
-        // this.shapes.t1l2.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0] - 0.7, tree1[1], tree1[2])), this.materials.t1l2);
-        // this.shapes.t1l3.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0] + 0.7, tree1[1], tree1[2])), this.materials.t1l3);
-        // this.shapes.t1l4.draw(context, program_state, treeTransform.times(Mat4.translation(tree1[0], tree1[1], tree1[2])), this.materials.t1l4);
-        // this.shapes.branch1.draw(context, program_state, Mat4.identity().times(Mat4.scale(1 / 1.1, 1 / 1.1, 1 / 1.1)).times(Mat4.scale(1, 8, 1)).times(Mat4.rotation(Math.PI, 0, 1, 1)).
-        //     times(Mat4.translation(-tree1[0], tree1[1] - 5, tree1[2] + 0.1)), this.materials.branch1);
+
 
         // tree 2
         this.t2l1 = Mat4.inverse(treeTransform.times(inverseTranslate));
@@ -435,13 +543,7 @@ export class FinalProject extends Scene {
         this.t2l3 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.t2l4 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.branch2 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        // this.shapes.t2l1.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0], tree2[1] + 0.5, tree2[2] - 1.75)), this.materials.t2l1);
-        // this.shapes.t2l2.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0] - 0.7, tree2[1], tree2[2] - 1.75)), this.materials.t2l2);
-        // this.shapes.t2l3.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0] + 0.7, tree2[1], tree2[2] - 1.75)), this.materials.t2l3);
-        // this.shapes.t2l4.draw(context, program_state, treeTransform.times(Mat4.translation(tree2[0], tree2[1], tree2[2] - 1.75)), this.materials.t2l4);
-        // this.shapes.branch2.draw(context, program_state, Mat4.identity().times(Mat4.scale(1 / 1.1, 1 / 1.1, 1 / 1.1)).times(Mat4.scale(1, 8, 1)).times(Mat4.rotation(Math.PI, 0, 1, 1)).
-        //     times(Mat4.translation(tree2[0] - 8.5, tree2[1] - 7, tree2[2] + 0.1)), this.materials.branch2);
-
+   
         var antBody_frontTrans = model_transform;
         var antBody_middleTrans = model_transform;
         var antBody_endTrans = model_transform;
@@ -510,8 +612,9 @@ export class FinalProject extends Scene {
         //     matFront_legTwo);
         // this.shapes.Front_legThree.draw(context, program_state, Front_legThreeTrans
         //     , matFront_legThree);
+        console.log(this.frame_period);
 
-        if (this.time_diff > this.time_limit) {
+        if (!this.pause_time && this.time_diff > this.frame_period) {
             this.time_step();
             this.time_diff = 0.0;
         }
