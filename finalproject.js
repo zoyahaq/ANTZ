@@ -160,7 +160,7 @@ export class FinalProject extends Scene {
         // this.black = new Material(new defs.Basic_Shader(), {color: hex_color("#000000")});
         this.white = new Material(new defs.Basic_Shader(),
             {});
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 5, 20), vec3(0, 0, 0), vec3(0, 1, 0));
 
         this.x_chunk_max = 30;
         this.y_chunk_max = 30;
@@ -632,74 +632,8 @@ export class FinalProject extends Scene {
         // drawing all the blocks 
         this.display_arrayed_objects(context, program_state, this.materials.dirt_block, dirt_trans);
 
-
-        var rockTransform = Mat4.identity();
-        var treeTransform = Mat4.identity();
-
-        //rocks
-        this.rock1 = Mat4.inverse(rockTransform.times(inverseTranslate));
-        this.rock2 = Mat4.inverse(rockTransform.times(inverseTranslate));
-        this.rock3 = Mat4.inverse(rockTransform.times(inverseTranslate));
-
-        // tree 1
-        this.t1l1 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.t1l2 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.t1l3 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.t1l4 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.branch1 = Mat4.inverse(treeTransform.times(inverseTranslate));
-
-
-        // tree 2
-        this.t2l1 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.t2l2 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.t2l3 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.t2l4 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        this.branch2 = Mat4.inverse(treeTransform.times(inverseTranslate));
-
-        var antBody_frontTrans = model_transform;
-        var antBody_middleTrans = model_transform;
-        var antBody_endTrans = model_transform;
-        var buttDesignTrans = model_transform;
-        var eyeballTrans = model_transform
-
-        var back_legOneTrans = model_transform
-        var back_legTwoTrans = model_transform
-        var back_legThreeTrans = model_transform
-
-        var Front_legOneTrans = model_transform
-        var Front_legTwoTrans = model_transform
-        var Front_legThreeTrans = model_transform
-
-        // All planet transformations     
-        antBody_frontTrans = antBody_frontTrans.times((Mat4.translation(-.4, 0.5, 0))).times(Mat4.scale(.3, .3, .3));
-        antBody_middleTrans = antBody_middleTrans.times((Mat4.translation(0, 0.5, 0))).times(Mat4.scale(.25, .25, .25));
-        antBody_endTrans = antBody_endTrans.times((Mat4.translation(.5, 0.5, 0))).times(Mat4.scale(.4, .4, .4));
-        buttDesignTrans = antBody_endTrans.times((Mat4.translation(.5, 0.5, 0))).times(Mat4.scale(.4, .4, .4));
-        eyeballTrans = eyeballTrans.times((Mat4.translation(-.45, 0.75, .2))).times(Mat4.scale(.08, .08, .08));
-
-        // Ant legs 
-        back_legOneTrans = back_legOneTrans.times((Mat4.translation(0, 0.6, -.2))).times(Mat4.rotation(Math.PI, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-        back_legTwoTrans = back_legTwoTrans.times((Mat4.translation(-.15, 0.6, -.2))).times(Mat4.rotation(Math.PI, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-        back_legThreeTrans = back_legThreeTrans.times((Mat4.translation(.15, 0.6, -.2))).times(Mat4.rotation(Math.PI, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-
-        // Ant legs 
-        Front_legOneTrans = Front_legOneTrans.times((Mat4.translation(0, 0.4, .2))).times(Mat4.rotation(Math.PI / 3, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-        Front_legTwoTrans = Front_legTwoTrans.times((Mat4.translation(-.15, 0.4, .2))).times(Mat4.rotation(Math.PI / 3, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-        Front_legThreeTrans = Front_legThreeTrans.times((Mat4.translation(.15, 0.4, .2))).times(Mat4.rotation(Math.PI / 3, 1, 0, 0)).times(Mat4.scale(.05, .05, .5));
-
-        // Drawing all the planet shapes
-        var matTwo = this.materials.antBody_front_PhoneShader
-        var matThree = this.materials.antBody_middle
-        var matFour = this.materials.antBody_end
-        var branchOne = this.materials.buttDesign
-        var matEyeball = this.materials.eyeball
-        var matback_legOne = this.materials.back_legOne
-        var matback_legTwo = this.materials.back_legTwo
-        var matback_legThree = this.materials.back_legThree
-
-        var matFront_legOne = this.materials.Front_legOne
-        var matFront_legTwo = this.materials.Front_legTwo
-        var matFront_legThree = this.materials.Front_legThree
+       const whiteCube = model_transform.times(Mat4.translation(-1, -21, -71)).times(Mat4.scale(this.x_chunk_max, this.y_chunk_max, this.z_chunk_max));
+       this.shapes.outline.draw(context, program_state, whiteCube, this.white, "LINES");
 
         if (!this.pause_time && this.time_diff > this.frame_period) {
             this.time_step();
