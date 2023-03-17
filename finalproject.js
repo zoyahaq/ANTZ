@@ -105,6 +105,9 @@ export class FinalProject extends Scene {
                 { ambient: .4, diffusivity: .6, color: hex_color("#FFA500") }),
             dug_out_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#ffffff") }),
+            rock_block: new Material(new Gouraud_Shader(),
+                { ambient: .4, diffusivity: .6, color: hex_color("#808080") }),
+            
             rock1: new Material(new defs.Phong_Shader(), rockInfo),
             rock2: new Material(new defs.Phong_Shader(), rockInfo),
             rock3: new Material(new defs.Phong_Shader(), rockInfo),
@@ -170,7 +173,8 @@ export class FinalProject extends Scene {
                 this.materials.grass_block,
                 this.materials.leaf_block,
                 this.materials.food_block,
-                this.materials.dug_out_block
+                this.materials.dug_out_block, 
+                this.materials.rock_block //7
             ];
 
         this.set_block_positions([0, 30], [0, 10], [0, 30], 0);
@@ -184,6 +188,31 @@ export class FinalProject extends Scene {
         this.set_block_positions([13, 17], [24, 25], [13, 17], 4);
         this.set_block_positions([14, 16], [25, 26], [14, 16], 4);
         this.set_block_positions([15, 16], [26, 27], [15, 16], 4);
+
+        this.set_block_positions([0, 1], [7, 13], [0, 3], 7);
+        this.set_block_positions([1, 2], [8, 12], [0, 3], 7);
+        this.set_block_positions([2, 3], [9, 11], [0, 3], 7);
+        this.set_block_positions([0, 2], [9, 12], [3, 4], 7);
+
+        this.set_block_positions([19, 21], [7, 13], [0, 3], 7);
+        this.set_block_positions([18, 22], [8, 12], [0, 3], 7);
+        this.set_block_positions([18, 23], [9, 11], [0, 3], 7);
+        this.set_block_positions([20, 22], [9, 12], [3, 4], 7);
+
+        this.set_block_positions([0, 1], [7, 13], [20, 22], 7);
+        this.set_block_positions([1, 2], [8, 12], [20, 23], 7);
+        this.set_block_positions([2, 3], [9, 11], [20, 22], 7);
+        this.set_block_positions([0, 2], [9, 12], [23, 24], 7);
+
+        this.set_block_positions([14, 16], [7, 13], [19, 23], 7);
+        this.set_block_positions([13, 17], [8, 12], [20, 23], 7);
+        this.set_block_positions([13, 18], [9, 11], [19, 23], 7);
+        this.set_block_positions([15, 17], [9, 12], [23, 24], 7);
+
+        this.set_block_positions([25, 27], [7, 13], [26, 28], 7);
+        this.set_block_positions([24, 28], [8, 12], [25, 28], 7);
+        this.set_block_positions([24, 29], [9, 11], [24, 28], 7);
+        this.set_block_positions([26, 28], [9, 12], [28, 29], 7);
 
         this.isOutlined = false;
         this.time_diff = 0.0;
