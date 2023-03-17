@@ -63,6 +63,10 @@ export class FinalProject extends Scene {
         this.shapes = {
             'outline': new Cube_Outline(),
             cube1: new defs.Cube(),
+            sphere: new defs.Subdivision_Sphere(4),
+            cylinder: new defs.Cylindrical_Tube(15, 20),
+
+
             rock1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             rock2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             rock3: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
@@ -99,15 +103,15 @@ export class FinalProject extends Scene {
                 { ambient: .4, diffusivity: .6, color: hex_color("#90EE90") }),
             leaf_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#3A5F0B") }),
+
             ant_block: new Material(new Gouraud_Shader(),
-                { ambient: .4, diffusivity: .6, color: hex_color("#FF10F0") }),
+                { ambient: .4, diffusivity: .6, color: hex_color("#C4A484") }),
             food_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#FFA500") }),
             dug_out_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#ffffff") }),
             rock_block: new Material(new Gouraud_Shader(),
                 { ambient: .4, diffusivity: .6, color: hex_color("#808080") }),
-            
             rock1: new Material(new defs.Phong_Shader(), rockInfo),
             rock2: new Material(new defs.Phong_Shader(), rockInfo),
             rock3: new Material(new defs.Phong_Shader(), rockInfo),
@@ -440,8 +444,70 @@ export class FinalProject extends Scene {
                 for (let k = 0; k < this.z_chunk_max; k++) {
                     const b_position = this.get_block_position(i, j, k);
                     if (b_position != -1) {
-                        if (this.isOutlined) {
-                            if (b_position == 6 || b_position == 1) {
+                        if (b_position == 1) {
+                            const trans_origin = base_trans.times(Mat4.translation(2 * i, 2 * j, 2 * k));
+                            const front_body = trans_origin.times(Mat4.translation(-0.7, 0, 0)).times(Mat4.scale(.7, .7, .7))
+                            const middle_body = trans_origin.times(Mat4.scale(.6, .6, .6))
+                            const back_body = trans_origin.times(Mat4.translation(1, 0, 0)).times(Mat4.scale(.9, .9, .9))
+
+                            const leg_front = trans_origin.times(Mat4.translation(-0.3, 0, 0.5)).times(Mat4.rotation(220 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+                            const leg_middle = trans_origin.times(Mat4.translation(0, 0, 0.5)).times(Mat4.rotation(220 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+                            const leg_back = trans_origin.times(Mat4.translation(0.3, 0, 0.5)).times(Mat4.rotation(220 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+
+
+                            const b_leg_front = trans_origin.times(Mat4.translation(-0.3, -0.5, -0.5)).times(Mat4.rotation(100 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+                            const b_leg_middle = trans_origin.times(Mat4.translation(0, -0.5, -0.5)).times(Mat4.rotation(100 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+                            const b_leg_back = trans_origin.times(Mat4.translation(0.3, -0.5, -0.5)).times(Mat4.rotation(100 * (Math.PI / 180), 1, 0, 0)).times(Mat4.scale(.2, .2, 1))
+
+                            // antBody_frontTrans = antBody_frontTrans.times((Mat4.translation(-.4, 0.5, 0))).times(Mat4.scale(.3, .3, .3));
+
+                            this.shapes.sphere.draw(context,
+                                program_state,
+                                middle_body,
+                                this.materials.ant_block);
+
+                            this.shapes.sphere.draw(context,
+                                program_state,
+                                front_body,
+                                this.materials.ant_block);
+
+                            this.shapes.sphere.draw(context,
+                                program_state,
+                                back_body,
+                                this.materials.ant_block);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                leg_front,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                leg_middle,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                leg_back,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                b_leg_front,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                b_leg_middle,
+                                this.materials.back_legOne);
+
+                            this.shapes.cylinder.draw(context,
+                                program_state,
+                                b_leg_back,
+                                this.materials.back_legOne);
+                        }
+                        else if (this.isOutlined) {
+                            if (b_position == 6) {
                                 this.shapes.cube1.draw(context,
                                     program_state,
                                     base_trans.times(Mat4.translation(2 * i, 2 * j, 2 * k)),
@@ -493,11 +559,6 @@ export class FinalProject extends Scene {
         this.display_arrayed_objects(context, program_state, this.materials.dirt_block, dirt_trans);
 
 
-
-        // this.shapes.cube1.draw(context, program_state, grass_trans, this.materials.grass_block)
-        // this.shapes.cube1.draw(context, program_state, dirt_trans, this.materials.dirt_block)
-        // this.shapes.cube1.draw(context, program_state, dirt_trans.times(Mat4.translation(0, -1, 0)), this.materials.dirt_block)
-
         var rockTransform = Mat4.identity();
         var treeTransform = Mat4.identity();
 
@@ -505,9 +566,6 @@ export class FinalProject extends Scene {
         this.rock1 = Mat4.inverse(rockTransform.times(inverseTranslate));
         this.rock2 = Mat4.inverse(rockTransform.times(inverseTranslate));
         this.rock3 = Mat4.inverse(rockTransform.times(inverseTranslate));
-        // this.shapes.rock1.draw(context, program_state, rockTransform.times(Mat4.translation(rock1[0], rock1[1], rock1[2])), this.materials.rock1);
-        // this.shapes.rock2.draw(context, program_state, rockTransform.times(Mat4.translation(rock2[0], rock2[1], rock2[2])), this.materials.rock1);
-        // this.shapes.rock3.draw(context, program_state, rockTransform.times(Mat4.translation(rock3[0], rock3[1], rock3[2])), this.materials.rock1);
 
         // tree 1
         this.t1l1 = Mat4.inverse(treeTransform.times(inverseTranslate));
@@ -515,12 +573,7 @@ export class FinalProject extends Scene {
         this.t1l3 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.t1l4 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.branch1 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        // this.shapes.t1l1.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0], tree1[1] + 0.5, tree1[2])), this.materials.t1l1);
-        // this.shapes.t1l2.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0] - 0.7, tree1[1], tree1[2])), this.materials.t1l2);
-        // this.shapes.t1l3.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree1[0] + 0.7, tree1[1], tree1[2])), this.materials.t1l3);
-        // this.shapes.t1l4.draw(context, program_state, treeTransform.times(Mat4.translation(tree1[0], tree1[1], tree1[2])), this.materials.t1l4);
-        // this.shapes.branch1.draw(context, program_state, Mat4.identity().times(Mat4.scale(1 / 1.1, 1 / 1.1, 1 / 1.1)).times(Mat4.scale(1, 8, 1)).times(Mat4.rotation(Math.PI, 0, 1, 1)).
-        //     times(Mat4.translation(-tree1[0], tree1[1] - 5, tree1[2] + 0.1)), this.materials.branch1);
+
 
         // tree 2
         this.t2l1 = Mat4.inverse(treeTransform.times(inverseTranslate));
@@ -528,13 +581,7 @@ export class FinalProject extends Scene {
         this.t2l3 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.t2l4 = Mat4.inverse(treeTransform.times(inverseTranslate));
         this.branch2 = Mat4.inverse(treeTransform.times(inverseTranslate));
-        // this.shapes.t2l1.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0], tree2[1] + 0.5, tree2[2] - 1.75)), this.materials.t2l1);
-        // this.shapes.t2l2.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0] - 0.7, tree2[1], tree2[2] - 1.75)), this.materials.t2l2);
-        // this.shapes.t2l3.draw(context, program_state, Mat4.identity().times(Mat4.translation(tree2[0] + 0.7, tree2[1], tree2[2] - 1.75)), this.materials.t2l3);
-        // this.shapes.t2l4.draw(context, program_state, treeTransform.times(Mat4.translation(tree2[0], tree2[1], tree2[2] - 1.75)), this.materials.t2l4);
-        // this.shapes.branch2.draw(context, program_state, Mat4.identity().times(Mat4.scale(1 / 1.1, 1 / 1.1, 1 / 1.1)).times(Mat4.scale(1, 8, 1)).times(Mat4.rotation(Math.PI, 0, 1, 1)).
-        //     times(Mat4.translation(tree2[0] - 8.5, tree2[1] - 7, tree2[2] + 0.1)), this.materials.branch2);
-
+   
         var antBody_frontTrans = model_transform;
         var antBody_middleTrans = model_transform;
         var antBody_endTrans = model_transform;
