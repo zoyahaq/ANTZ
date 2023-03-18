@@ -8,5 +8,5 @@ We created a virtual simulation of an ant colony in a terrarium using TinyGraphi
 
 <img width="411" alt="Screen Shot 2023-03-17 at 10 56 58 PM" src="https://user-images.githubusercontent.com/46724697/226087950-91456de9-465a-4d4c-8ca3-c30f03b76b7f.png">
 
-Created By: Sraavya Pradeep, Zoya Haq, Garni Gharibian
+Created By: Garni Gharibian, Zoya Haq, Sraavya Pradeep
 
