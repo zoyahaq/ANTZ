@@ -1,3 +1,5 @@
+<img width="413" alt="Screen Shot 2023-03-17 at 11 00 29 PM" src="https://user-images.githubusercontent.com/46724697/226088094-d42614c4-200b-4275-9a47-6e6755b785c2.png">
+
 ANTZ!
 
 We love ants. We love watching ants colonize. We love ant terrariums. 
